@@ -222,8 +222,8 @@ for i, m in enumerate(metadata):
 
 # Let's verify on a single triplet example that the squared L2 distance between its anchor-positive pair
 # is smaller than the distance between its anchor-negative pair.
-show_pair(2, 3)
-show_pair(2, 12)
+# show_pair(2, 3)
+# show_pair(2, 12)
 
 # As expected, the distance between the two images of Jacques Chirac is smaller than the distance between
 # an image of Jacques Chirac and an image of Gerhard Schröder (0.30 < 1.12).
@@ -262,12 +262,12 @@ opt_tau = thresholds[opt_idx]
 opt_acc = accuracy_score(identical, distances < opt_tau)
 
 # Plot F1 score and accuracy as function of distance threshold
-plt.plot(thresholds, f1_scores, label='F1 score')
-plt.plot(thresholds, acc_scores, label='Accuracy')
-plt.axvline(x=opt_tau, linestyle='--', lw=1, c='lightgrey', label='Threshold')
-plt.title('Accuracy at threshold ' + str(opt_tau) + '=' + str(opt_acc))
-plt.xlabel('Distance threshold')
-plt.legend()
+# plt.plot(thresholds, f1_scores, label='F1 score')
+# plt.plot(thresholds, acc_scores, label='Accuracy')
+# plt.axvline(x=opt_tau, linestyle='--', lw=1, c='lightgrey', label='Threshold')
+# plt.title('Accuracy at threshold ' + str(opt_tau) + '=' + str(opt_acc))
+# plt.xlabel('Distance threshold')
+# plt.legend()
 
 # The face verification accuracy at tau = 0.56 is 95.7%. This is not bad given a baseline of 89% for a
 # classifier that always predicts *different identity* (there are 980 pos. pairs and 8821 neg. pairs)
@@ -279,19 +279,19 @@ plt.legend()
 # but these are not further analyzed here.
 
 
-dist_pos = distances[identical == 1]
-dist_neg = distances[identical == 0]
-plt.figure(figsize=(12,4))
-plt.subplot(121)
-plt.hist(dist_pos)
-plt.axvline(x=opt_tau, linestyle='--', lw=1, c='lightgrey', label='Threshold')
-plt.title('Distances (pos. pairs)')
-plt.legend()
-plt.subplot(122)
-plt.hist(dist_neg)
-plt.axvline(x=opt_tau, linestyle='--', lw=1, c='lightgrey', label='Threshold')
-plt.title('Distances (neg. pairs)')
-plt.legend()
+# dist_pos = distances[identical == 1]
+# dist_neg = distances[identical == 0]
+# plt.figure(figsize=(12,4))
+# plt.subplot(121)
+# plt.hist(dist_pos)
+# plt.axvline(x=opt_tau, linestyle='--', lw=1, c='lightgrey', label='Threshold')
+# plt.title('Distances (pos. pairs)')
+# plt.legend()
+# plt.subplot(122)
+# plt.hist(dist_neg)
+# plt.axvline(x=opt_tau, linestyle='--', lw=1, c='lightgrey', label='Threshold')
+# plt.title('Distances (neg. pairs)')
+# plt.legend()
 
 
 # ### Face recognition
