@@ -32,6 +32,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import LinearSVC
 import warnings
 from sklearn.manifold import TSNE
+import time
 
 
 class IdentityMetadata:
@@ -80,9 +81,8 @@ def load_metadata(path):
 
 def load_image(path):
     img = cv2.imread(path, 1)
-    # OpenCV loads images with color channels
-    # in BGR order. So we need to reverse them
-    return img[...,::-1]
+    # OpenCV loads images with color channels in BGR order. So we need to reverse them
+    return img[:, :, ::-1]
 
 def align_image(img):
     return alignment.align(96, img, alignment.getLargestFaceBoundingBox(img),
@@ -163,8 +163,14 @@ emb_n = nn4_small2(in_n)
 # https://github.com/iwantooxxoox/Keras-OpenFace/tree/master/weights which were then
 # converted here to a binary format that can be loaded by Keras with 'load_weights':
 
+start = time.time()
+
 nn4_small2_pretrained = create_model()
 nn4_small2_pretrained.load_weights('weights/nn4.small2.v1.h5')
+
+end = time.time()
+print("checkpoint 1. Duration: ")
+print(end - start)
 
 # ### Custom dataset
 # To demonstrate face recognition on a custom dataset, a small subset of the LFW
@@ -172,7 +178,11 @@ nn4_small2_pretrained.load_weights('weights/nn4.small2.v1.h5')
 # It consists of 100 face images of 10 identities(images).
 # The metadata for each image (file and identity name) are loaded into memory for later processing.
 
+start = time.time()
 metadata = load_metadata('images')
+end = time.time()
+print("checkpoint 2. Duration: ")
+print(end - start)
 
 # ### Face alignment
 # The nn4.small2.v1 model was trained with aligned face images, therefore,
@@ -181,6 +191,7 @@ metadata = load_metadata('images')
 # to produce aligned 96x96 RGB face images. By using the AlignDlib (align.py) utility from the
 # OpenFace project this is straightforward:
 # Initialize the OpenFace face alignment utility
+start = time.time()
 alignment = AlignDlib('models/landmarks.dat')
 # Load an image of Jacques Chirac
 jc_orig = load_image(metadata[2].image_path())
@@ -188,6 +199,9 @@ jc_orig = load_image(metadata[2].image_path())
 bb = alignment.getLargestFaceBoundingBox(jc_orig)
 # Transform image using specified face landmark indices and crop image to 96x96
 jc_aligned = alignment.align(96, jc_orig, bb, landmarkIndices=AlignDlib.OUTER_EYES_AND_NOSE)
+print("checkpoint 3. Duration: ")
+end = time.time()
+print(end - start)
 
 # Show original image
 # plt.subplot("131")
@@ -211,14 +225,20 @@ jc_aligned = alignment.align(96, jc_orig, bb, landmarkIndices=AlignDlib.OUTER_EY
 # Embedding vectors can now be calculated by feeding the aligned and scaled images into the pre-trained network.
 
 embedded = np.zeros((metadata.shape[0], 128))
+start = time.time()
 
+# Ilya: generate 128 point embeddings for each image. This part takes a long time (13 seconds).
 for i, m in enumerate(metadata):
     img = load_image(m.image_path())
     img = align_image(img)
     # scale RGB values to interval [0,1]
     img = (img / 255.).astype(np.float32)
-    # obtain embedding vector for image
+    # obtain 128 point embedding vector for each image
     embedded[i] = nn4_small2_pretrained.predict(np.expand_dims(img, axis=0))[0]
+
+print("checkpoint 4. Duration: ") # 13.7589070797 - the longest part of the script
+end = time.time()
+print(end - start)
 
 # Let's verify on a single triplet example that the squared L2 distance between its anchor-positive pair
 # is smaller than the distance between its anchor-negative pair.
@@ -241,6 +261,7 @@ distances = [] # squared L2 distance between pairs
 identical = [] # 1 if same identity, 0 otherwise
 
 num = len(metadata)
+start = time.time()
 
 for i in range(num - 1):
     for j in range(1, num):
@@ -260,6 +281,8 @@ opt_idx = np.argmax(f1_scores)
 opt_tau = thresholds[opt_idx]
 # Accuracy at maximal F1 score
 opt_acc = accuracy_score(identical, distances < opt_tau)
+print("checkpoint 5. Duration: ")
+print(time.time() - start)
 
 # Plot F1 score and accuracy as function of distance threshold
 # plt.plot(thresholds, f1_scores, label='F1 score')
@@ -306,6 +329,7 @@ opt_acc = accuracy_score(identical, distances < opt_tau)
 # Alternatively, a linear support vector machine (SVM) can be trained with the database entries and used to
 # classify i.e. identify new inputs. For training these classifiers we use 50% of the dataset, for evaluation the other 50%.
 
+start = time.time()
 
 targets = np.array([m.name for m in metadata])
 encoder = LabelEncoder()
@@ -333,6 +357,9 @@ svc.fit(X_train, y_train)
 
 acc_knn = accuracy_score(y_test, knn.predict(X_test))
 acc_svc = accuracy_score(y_test, svc.predict(X_test))
+
+print("checkpoint 6. Duration: ")
+print(time.time() - start)
 
 print("KNN accuracy: ", acc_knn,  "SVM accuracy: ", acc_svc)
 
