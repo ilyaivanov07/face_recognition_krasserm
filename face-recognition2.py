@@ -19,11 +19,13 @@ image_folder = 'images'
 nn4_small2_pretrained = create_model()
 nn4_small2_pretrained.load_weights('weights/nn4.small2.v1.h5')
 
-metadata = [] # image metadata: dir, name, file_name
-for i in os.listdir(image_folder):
-    for f in os.listdir(os.path.join(image_folder, i)):
-        metadata.append(IdentityMetadata(image_folder, i, f))
-metadata = np.array(metadata)
+# metadata = [] # image metadata: dir, name, file_name
+# for i in os.listdir(image_folder):
+#     for f in os.listdir(os.path.join(image_folder, i)):
+#         metadata.append(IdentityMetadata(image_folder, i, f))
+# metadata = np.array(metadata)
+# pickle.dump(metadata, open('metadata.p','w'))
+metadata = pickle.load(open('metadata.p'))
 
 alignment = AlignDlib('models/landmarks.dat')
 
