@@ -5,17 +5,68 @@
 import tensorflow as tf
 import numpy as np
 import os
-
+from keras import backend as K
 from numpy import genfromtxt
 from keras.layers import Conv2D, ZeroPadding2D, Activation
 from keras.layers.normalization import BatchNormalization
+from keras.layers import Layer
+import cv2
+from align import AlignDlib
+
 
 _FLOATX = 'float32'
 
-def variable(value, dtype=_FLOATX, name=None):
-  v = tf.Variable(np.asarray(value, dtype=dtype), name=name)
-  _get_session().run(v.initializer)
-  return v
+
+class TripletLossLayer(Layer):
+    def __init__(self, alpha, **kwargs):
+        self.alpha = alpha
+        super(TripletLossLayer, self).__init__(**kwargs)
+
+    def triplet_loss(self, inputs):
+        a, p, n = inputs
+        p_dist = K.sum(K.square(a - p), axis=-1)
+        n_dist = K.sum(K.square(a - n), axis=-1)
+        return K.sum(K.maximum(p_dist - n_dist + self.alpha, 0), axis=0)
+
+    def call(self, inputs):
+        loss = self.triplet_loss(inputs)
+        self.add_loss(loss)
+        return loss
+
+
+class IdentityMetadata:
+    def __init__(self, base, name, file):
+        # dataset base directory
+        self.base = base
+        # identity name
+        self.name = name
+        # image file name
+        self.file = file
+
+    def __repr__(self):
+        return self.image_path()
+
+    def image_path(self):
+        return os.path.join(self.base, self.name, self.file)
+
+
+def distance(emb1, emb2):
+    return np.sum(np.square(emb1 - emb2))
+
+def align_image(img, alignment):
+    return alignment.align(96, img, alignment.getLargestFaceBoundingBox(img),
+                           landmarkIndices=AlignDlib.OUTER_EYES_AND_NOSE)
+
+
+def load_image(path):
+    img = cv2.imread(path, 1)
+    # OpenCV loads images with color channels in BGR order. So we need to reverse them
+    return img[:, :, ::-1]
+
+# def variable(value, dtype=_FLOATX, name=None):
+#   v = tf.Variable(np.asarray(value, dtype=dtype), name=name)
+#   _get_session().run(v.initializer)
+#   return v
 
 def shape(x):
   return x.get_shape()
